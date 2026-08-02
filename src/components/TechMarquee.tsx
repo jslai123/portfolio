@@ -43,12 +43,20 @@ export default function TechMarquee() {
       setReady(true)
     }
     measure()
-    // Re-measure once the Kanit web font finishes loading: measuring against
-    // a fallback font gives narrower widths, which throws off tile spacing
-    // and makes tiles overlap once the real (wider) glyphs render.
-    document.fonts?.ready.then(measure)
     window.addEventListener('resize', measure)
-    return () => window.removeEventListener('resize', measure)
+
+    // Re-measure whenever the hidden tiles' own size changes: this catches
+    // the Kanit web font swapping in (fallback-font glyphs are narrower, so
+    // tiles get positioned too close together and overlap once the wider
+    // real glyphs render). document.fonts.ready isn't reliable enough for
+    // this on iOS Safari, so watch actual layout size instead.
+    const observer = new ResizeObserver(() => measure())
+    measureRefs.current.forEach((el) => el && observer.observe(el))
+
+    return () => {
+      window.removeEventListener('resize', measure)
+      observer.disconnect()
+    }
   }, [])
 
   const totalWidth = itemWidths.reduce((sum, w) => sum + w, 0)
