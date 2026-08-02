@@ -33,29 +33,43 @@ export default function TechMarquee() {
     TECH_STACK.map(() => 300),
   )
 
+  const [measureGen, setMeasureGen] = useState(0)
+
   useLayoutEffect(() => {
-    function measure() {
+    // Only reveal once the Kanit web font is confirmed loaded. Measuring
+    // against the fallback font gives narrower widths, and if we reveal on
+    // that measurement, tiles overlap the instant the wider real glyphs
+    // swap in — then visibly, gradually settle as Framer Motion tweens the
+    // in-flight animation toward the corrected values instead of snapping.
+    // Staying hidden until the font is verified avoids ever showing the
+    // wrong layout in the first place.
+    function measure(reveal: boolean) {
       if (!containerRef.current) return
       setContainerWidth(containerRef.current.offsetWidth)
       setRowGap(window.innerWidth < 640 ? 76 : window.innerWidth < 1024 ? 88 : 104)
       const widths = measureRefs.current.map((el) => (el ? el.offsetWidth + GAP : 300))
       setItemWidths(widths)
-      setReady(true)
+      setMeasureGen((gen) => gen + 1)
+      if (reveal) setReady(true)
     }
-    measure()
-    window.addEventListener('resize', measure)
 
-    // Re-measure whenever the hidden tiles' own size changes: this catches
-    // the Kanit web font swapping in (fallback-font glyphs are narrower, so
-    // tiles get positioned too close together and overlap once the wider
-    // real glyphs render). document.fonts.ready isn't reliable enough for
-    // this on iOS Safari, so watch actual layout size instead.
-    const observer = new ResizeObserver(() => measure())
-    measureRefs.current.forEach((el) => el && observer.observe(el))
+    if (document.fonts?.check('900 1em Kanit')) {
+      // Already loaded (e.g. cached from an earlier page view) — no need to wait.
+      measure(true)
+    } else {
+      // Not hidden by default: if the Font Loading API is unavailable, fall
+      // back to measuring immediately rather than staying hidden forever.
+      measure(!document.fonts)
+      document.fonts?.load('900 1em Kanit').finally(() => measure(true))
+    }
+
+    function onResize() {
+      measure(true)
+    }
+    window.addEventListener('resize', onResize)
 
     return () => {
-      window.removeEventListener('resize', measure)
-      observer.disconnect()
+      window.removeEventListener('resize', onResize)
     }
   }, [])
 
@@ -99,7 +113,7 @@ export default function TechMarquee() {
 
           return (
             <motion.span
-              key={i}
+              key={`${measureGen}-${i}`}
               className="absolute top-0 left-0 flex items-center whitespace-nowrap"
               style={{ willChange: 'transform' }}
               animate={{
