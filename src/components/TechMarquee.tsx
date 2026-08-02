@@ -43,6 +43,10 @@ export default function TechMarquee() {
       setReady(true)
     }
     measure()
+    // Re-measure once the Kanit web font finishes loading: measuring against
+    // a fallback font gives narrower widths, which throws off tile spacing
+    // and makes tiles overlap once the real (wider) glyphs render.
+    document.fonts?.ready.then(measure)
     window.addEventListener('resize', measure)
     return () => window.removeEventListener('resize', measure)
   }, [])
