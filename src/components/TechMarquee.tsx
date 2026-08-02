@@ -1,16 +1,14 @@
-import { useLayoutEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import FadeIn from './FadeIn'
 import { TECH_STACK, type TechItem } from '../data/techStack'
 
-const GAP = 48
-const REPEATS = 3
-const DURATION = 42
+const ROW_1 = TECH_STACK.slice(0, 4)
+const ROW_2 = TECH_STACK.slice(4)
 
 function TileContent({ item }: { item: TechItem }) {
   const Icon = item.icon
   return (
-    <span className="flex items-center gap-3">
+    <span className="flex items-center gap-3 pr-10 sm:pr-14">
       <Icon className="h-6 w-6 shrink-0 text-[#BBCCD7]/60 sm:h-7 sm:w-7" />
       <span
         className="gradient-heading font-black tracking-tight uppercase"
@@ -23,67 +21,31 @@ function TileContent({ item }: { item: TechItem }) {
   )
 }
 
-export default function TechMarquee() {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const measureRefs = useRef<(HTMLSpanElement | null)[]>([])
-  const [ready, setReady] = useState(false)
-  const [containerWidth, setContainerWidth] = useState(1200)
-  const [rowGap, setRowGap] = useState(96)
-  const [itemWidths, setItemWidths] = useState<number[]>(
-    TECH_STACK.map(() => 300),
+// A standard, seamless infinite marquee: the item list is rendered twice
+// back to back, and the whole strip animates from 0 to -50% (its own
+// half-width) on a plain linear loop — once it's shifted by exactly one
+// copy's width, the second copy sits exactly where the first started, so
+// the loop point is invisible. This needs no width measurement or
+// per-tile position math, so there's nothing that can drift or race
+// against web font loading.
+function MarqueeRow({ items, direction, duration }: { items: TechItem[]; direction: 'left' | 'right'; duration: number }) {
+  const doubled = [...items, ...items]
+  return (
+    <div className="overflow-hidden">
+      <motion.div
+        className="flex w-max items-center whitespace-nowrap"
+        animate={{ x: direction === 'left' ? ['0%', '-50%'] : ['-50%', '0%'] }}
+        transition={{ duration, repeat: Infinity, ease: 'linear' }}
+      >
+        {doubled.map((item, i) => (
+          <TileContent key={i} item={item} />
+        ))}
+      </motion.div>
+    </div>
   )
+}
 
-  const [measureGen, setMeasureGen] = useState(0)
-
-  useLayoutEffect(() => {
-    // Only reveal once the Kanit web font is confirmed loaded. Measuring
-    // against the fallback font gives narrower widths, and if we reveal on
-    // that measurement, tiles overlap the instant the wider real glyphs
-    // swap in — then visibly, gradually settle as Framer Motion tweens the
-    // in-flight animation toward the corrected values instead of snapping.
-    // Staying hidden until the font is verified avoids ever showing the
-    // wrong layout in the first place.
-    function measure(reveal: boolean) {
-      if (!containerRef.current) return
-      setContainerWidth(containerRef.current.offsetWidth)
-      setRowGap(window.innerWidth < 640 ? 76 : window.innerWidth < 1024 ? 88 : 104)
-      const widths = measureRefs.current.map((el) => (el ? el.offsetWidth + GAP : 300))
-      setItemWidths(widths)
-      setMeasureGen((gen) => gen + 1)
-      if (reveal) setReady(true)
-    }
-
-    if (document.fonts?.check('900 1em Kanit')) {
-      // Already loaded (e.g. cached from an earlier page view) — no need to wait.
-      measure(true)
-    } else {
-      // Not hidden by default: if the Font Loading API is unavailable, fall
-      // back to measuring immediately rather than staying hidden forever.
-      measure(!document.fonts)
-      document.fonts?.load('900 1em Kanit').finally(() => measure(true))
-    }
-
-    function onResize() {
-      measure(true)
-    }
-    window.addEventListener('resize', onResize)
-
-    return () => {
-      window.removeEventListener('resize', onResize)
-    }
-  }, [])
-
-  const totalWidth = itemWidths.reduce((sum, w) => sum + w, 0)
-  const belt = Array.from({ length: TECH_STACK.length * REPEATS }, (_, i) => i)
-
-  let cumulative = 0
-  const offsets = belt.map((i) => {
-    const w = itemWidths[i % TECH_STACK.length]
-    const offset = cumulative
-    cumulative += w
-    return offset
-  })
-
+export default function TechMarquee() {
   return (
     <section className="font-kanit overflow-hidden bg-[#0C0C0C] py-16 sm:py-20 md:py-24">
       <FadeIn delay={0} y={20}>
@@ -92,46 +54,9 @@ export default function TechMarquee() {
         </p>
       </FadeIn>
 
-      {/* Hidden measuring pass: renders each unique tile once to get its real width */}
-      <div className="pointer-events-none absolute -z-10 opacity-0" aria-hidden="true">
-        {TECH_STACK.map((item, i) => (
-          <span key={item.name} ref={(el) => { measureRefs.current[i] = el }} className="inline-flex whitespace-nowrap">
-            <TileContent item={item} />
-          </span>
-        ))}
-      </div>
-
-      <div
-        ref={containerRef}
-        className="relative"
-        style={{ height: rowGap + 64, visibility: ready ? 'visible' : 'hidden' }}
-      >
-        {belt.map((i) => {
-          const item = TECH_STACK[i % TECH_STACK.length]
-          const itemWidth = itemWidths[i % TECH_STACK.length]
-          const delay = -((offsets[i] / totalWidth) * DURATION)
-
-          return (
-            <motion.span
-              key={`${measureGen}-${i}`}
-              className="absolute top-0 left-0 flex items-center whitespace-nowrap"
-              style={{ willChange: 'transform' }}
-              animate={{
-                x: [-itemWidth, containerWidth, containerWidth, -itemWidth, -itemWidth],
-                y: [0, 0, rowGap, rowGap, 0],
-              }}
-              transition={{
-                duration: DURATION,
-                repeat: Infinity,
-                ease: 'linear',
-                times: [0, 0.47, 0.5, 0.97, 1],
-                delay,
-              }}
-            >
-              <TileContent item={item} />
-            </motion.span>
-          )
-        })}
+      <div className="flex flex-col gap-6 sm:gap-8">
+        <MarqueeRow items={ROW_1} direction="left" duration={26} />
+        <MarqueeRow items={ROW_2} direction="right" duration={26} />
       </div>
     </section>
   )
