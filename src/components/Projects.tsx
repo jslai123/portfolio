@@ -4,8 +4,6 @@ import FadeIn from './FadeIn'
 import GhostButton from './GhostButton'
 import { PROJECTS } from '../data/projects'
 
-const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'] as const
-
 function ProjectImage({
   basePath,
   alt,
@@ -15,9 +13,7 @@ function ProjectImage({
   alt: string
   className?: string
 }) {
-  const [extIndex, setExtIndex] = useState(0)
-  const ext = IMAGE_EXTENSIONS[extIndex]
-  const src = ext ? `${basePath}.${ext}` : null
+  const [failed, setFailed] = useState(false)
 
   return (
     <div
@@ -26,12 +22,12 @@ function ProjectImage({
       <div className="absolute inset-0 flex items-center justify-center text-center text-xs text-white/25 sm:text-sm">
         Screenshot coming soon
       </div>
-      {src && (
+      {!failed && (
         <img
-          src={src}
+          src={`${basePath}.png`}
           alt={alt}
           className="absolute inset-0 h-full w-full object-cover object-top"
-          onError={() => setExtIndex((current) => current + 1)}
+          onError={() => setFailed(true)}
         />
       )}
     </div>
