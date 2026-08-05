@@ -57,17 +57,17 @@ export default function Header() {
           ))}
           <a
             href="#contact"
-            onMouseEnter={() => setHovered('Contact us')}
+            onMouseEnter={() => setHovered('Contact')}
             className="font-mono-brand relative inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs tracking-wider whitespace-nowrap text-white/80 uppercase transition-colors hover:text-white"
           >
-            {hovered === 'Contact us' && (
+            {hovered === 'Contact' && (
               <motion.span
                 layoutId="nav-hover-pill"
                 className="absolute inset-0 rounded-full bg-white/10"
                 transition={{ type: 'spring', stiffness: 400, damping: 32 }}
               />
             )}
-            <span className="relative">Contact us</span>
+            <span className="relative">Contact</span>
             <ArrowUpRight className="relative h-3.5 w-3.5" />
           </a>
         </nav>
@@ -107,7 +107,7 @@ export default function Header() {
               onClick={() => setMenuOpen(false)}
               className="font-mono-brand inline-flex items-center gap-1.5 rounded-xl px-4 py-3 text-sm tracking-wider text-white/80 uppercase transition-colors hover:bg-white/10 hover:text-white"
             >
-              Contact us
+              Contact
               <ArrowUpRight className="h-3.5 w-3.5" />
             </a>
           </motion.nav>
