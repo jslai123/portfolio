@@ -25,10 +25,8 @@ export const PROJECTS: Project[] = [
     category: 'Coursework',
     tagline: 'Pricing decision tool for small businesses',
     description:
-      'A Spring Boot web app that helps Malaysian micro and small businesses see their real margin on every product, not just their monthly revenue. Includes a break-even calculator, a what-if simulator, multi-product comparison, and a dashboard that leads with whichever finding matters most. Backed by 43 automated tests and deployed live on Railway.',
+      'A Spring Boot web app that helps Malaysian micro and small businesses see their real margin on every product, not just their monthly revenue. Includes a break-even calculator, a what-if simulator, multi-product comparison, and a dashboard that leads with whichever finding matters most. Backed by 43 automated tests, containerised with a multi-stage Docker build and deployed to Railway.',
     tech: ['Spring Boot', 'Spring Security', 'MySQL', 'Thymeleaf', 'Docker'],
-    link: 'https://pricepoint-production-4e50.up.railway.app',
-    linkLabel: 'View Live',
   },
   {
     slug: 'driveeasy-motors',
